@@ -1,11 +1,21 @@
 package com.example.mykeyboard
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
 import android.graphics.ColorSpace.Rgb
 import android.inputmethodservice.InputMethodService
 import android.provider.CalendarContract.Colors
+import android.util.Log
+import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
+import android.widget.FrameLayout
+import android.widget.PopupWindow
+import android.widget.TextView
+import androidx.core.view.updateLayoutParams
 import com.bumptech.glide.Glide
 import com.example.mykeyboard.databinding.KeyboardLayoutBinding
 
@@ -38,9 +48,13 @@ class MyKeyboard : InputMethodService(){
 
         for(buttonId in buttonIds){
             val button = keyboardBinding.root.findViewById<Button>(buttonId)
-            button.setOnClickListener {
+            button.setOnClickListener { view ->
                 val inputConnection = currentInputConnection
+                val character = button.text.toString()
+
                 inputConnection?.commitText(button.text.toString(),1)
+
+                showLargeCharacterPopup(view, character)
             }
         }
 
@@ -63,5 +77,44 @@ class MyKeyboard : InputMethodService(){
         }
 
         return keyboardBinding.root
+    }
+
+    private fun showLargeCharacterPopup(button: View, character: String) {
+        // Create the TextView for the popup
+        val popupTextView = TextView(this).apply {
+            text = character
+            textSize = 50f
+            setTextColor(resources.getColor(android.R.color.white))
+            gravity = Gravity.CENTER
+            setBackgroundResource(android.R.color.black)
+            setPadding(20, 20, 20, 20)
+        }
+
+        // Create the PopupWindow
+        val popupWindow = PopupWindow(
+            popupTextView,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            isFocusable = false
+            elevation = 8f
+        }
+
+        // Display the popup
+        popupWindow.showAtLocation(
+            button,
+            Gravity.NO_GRAVITY,
+            0,
+            -200
+        )
+
+        // Fade out and dismiss the popup
+        popupTextView.animate()
+            .alpha(0f)
+            .setDuration(500)
+            .withEndAction {
+                popupWindow.dismiss()
+            }
+            .start()
     }
 }
